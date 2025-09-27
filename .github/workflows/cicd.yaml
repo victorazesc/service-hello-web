@@ -50,6 +50,16 @@ jobs:
             ${{ steps.vars.outputs.image_full }}
             ${{ steps.vars.outputs.image_latest }}
 
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: v1.30.0
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name "${EKS_CLUSTER}" --region "${AWS_REGION}"
 
@@ -58,7 +68,7 @@ jobs:
           helm upgrade --install hello charts/hello-web \
             -n devops-lab --create-namespace \
             --set image.repository="${{ steps.vars.outputs.image_repo }}" \
-            --set image.tag="${IMAGE_TAG}" \
+            --set image.tag="${{ env.IMAGE_TAG }}"
             --wait --timeout 5m
 
       - name: Check rollout
