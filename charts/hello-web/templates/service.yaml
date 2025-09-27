@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "hello-web.fullname" . }}
+  labels:
+    app: {{ include "hello-web.name" . }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: {{ include "hello-web.name" . }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.containerPort }}
