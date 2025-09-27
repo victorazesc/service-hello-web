@@ -13,17 +13,17 @@ env:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, eks]   # labels que você passou no runner (RUNNER_LABELS="eks")
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      # Em EC2 com Instance Profile, você pode dispensar as keys.
+      # Se quiser manter o action, use só a região (ele respeita a credencial da EC2):
+      - name: Configure AWS region (use instance profile)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ env.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
         id: ecr
@@ -60,7 +60,7 @@ jobs:
         with:
           version: v3.14.0
 
-      - name: Update kubeconfig
+      - name: Update kubeconfig (dentro da VPC)
         run: aws eks update-kubeconfig --name "${EKS_CLUSTER}" --region "${AWS_REGION}"
 
       - name: Helm upgrade
@@ -68,7 +68,7 @@ jobs:
           helm upgrade --install hello charts/hello-web \
             -n devops-lab --create-namespace \
             --set image.repository="${{ steps.vars.outputs.image_repo }}" \
-            --set image.tag="${{ env.IMAGE_TAG }}"
+            --set image.tag="${{ env.IMAGE_TAG }}" \
             --wait --timeout 5m
 
       - name: Check rollout
